@@ -59,3 +59,5 @@ app.get("/", (req, res) => {
 });
 
 server.listen(4000, () => "Server is running on port 4000");
+
+app.listen(5000);
