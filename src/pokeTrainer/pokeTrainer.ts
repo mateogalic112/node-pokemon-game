@@ -12,7 +12,9 @@ class PokeTrainerController {
 
   public initializeRoutes() {
     this.router.get(this.path, this.getAllPokeTrainers);
+    this.router.get(`${this.path}/:id`, this.getPokeTrainer);
     this.router.post(this.path, this.createPokeTrainer);
+    this.router.patch(`${this.path}/:id`, this.updatePokeballs);
   }
 
   private getAllPokeTrainers = async (
@@ -20,7 +22,39 @@ class PokeTrainerController {
     response: express.Response
   ) => {
     const pokeTrainers = await this.prisma.pokeTrainer.findMany();
-    response.send(pokeTrainers);
+    return response.json(pokeTrainers);
+  };
+
+  private getPokeTrainer = async (
+    request: express.Request,
+    response: express.Response
+  ) => {
+    const pokeTrainer = await this.prisma.pokeTrainer.findFirst({
+      where: {
+        id: +request.params.id,
+      },
+      include: {
+        pokemons: true,
+      },
+    });
+
+    return response.json(pokeTrainer);
+  };
+
+  private updatePokeballs = async (
+    request: express.Request,
+    response: express.Response
+  ) => {
+    const updatedTrainer = await this.prisma.pokeTrainer.update({
+      where: {
+        id: +request.params.id,
+      },
+      data: {
+        pokeballs: +request.body.pokeballs,
+      },
+    });
+
+    return response.json(updatedTrainer);
   };
 
   private createPokeTrainer = async (
@@ -31,7 +65,7 @@ class PokeTrainerController {
       data: request.body,
     });
 
-    response.send(pokeTrainer);
+    return response.json(pokeTrainer);
   };
 }
 

@@ -20,7 +20,7 @@ class PokemonController {
     response: express.Response
   ) => {
     const pokemon = await this.prisma.pokemon.findMany();
-    response.send(pokemon);
+    return response.json(pokemon);
   };
 
   private createPokemon = async (
@@ -31,7 +31,7 @@ class PokemonController {
       data: request.body,
     });
 
-    response.send(pokemon);
+    return response.json(pokemon);
   };
 }
 
