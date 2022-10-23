@@ -13,6 +13,7 @@ class PokemonController {
   public initializeRoutes() {
     this.router.get(this.path, this.getAllPokemons);
     this.router.post(this.path, this.createPokemon);
+    this.router.patch(`${this.path}/:id`, this.updatePokemonHp);
   }
 
   private getAllPokemons = async (
@@ -32,6 +33,20 @@ class PokemonController {
     });
 
     return response.json(pokemon);
+  };
+
+  private updatePokemonHp = async (
+    request: express.Request,
+    response: express.Response
+  ) => {
+    const id = +request.params.id;
+    const hp = +request.body.hp;
+    const updatedPokemon = await this.prisma.pokemon.update({
+      where: { id },
+      data: { hp },
+    });
+
+    return response.json(updatedPokemon);
   };
 }
 
