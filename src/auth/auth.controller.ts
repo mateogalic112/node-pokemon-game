@@ -36,6 +36,10 @@ class AuthController implements Controller {
     }
 
     const registeredUser = await this.authService.registerUser(userData);
+    const tokenData = this.authService.createToken(registeredUser);
+    response.setHeader("Set-Cookie", [
+      this.authService.createCookie(tokenData),
+    ]);
     return response.send(registeredUser);
   };
 
@@ -46,20 +50,24 @@ class AuthController implements Controller {
   ) => {
     const loginData: LoginUserDto = request.body;
     const user = await this.authService.findUserByEmail(loginData.email);
-    if (user) {
-      const isPasswordMatching = await this.authService.checkIfPasswordMatch(
-        loginData.password,
-        user.password
-      );
-      if (isPasswordMatching) {
-        user.password = undefined;
-        return response.send(user);
-      } else {
-        return next(new WrongCredentialsException());
-      }
-    } else {
+    if (!user) {
       return next(new WrongCredentialsException());
     }
+
+    const isPasswordMatching = await this.authService.checkIfPasswordMatch(
+      loginData.password,
+      user.password
+    );
+    if (!isPasswordMatching) {
+      return next(new WrongCredentialsException());
+    }
+
+    user.password = undefined;
+    const tokenData = this.authService.createToken(user);
+    response.setHeader("Set-Cookie", [
+      this.authService.createCookie(tokenData),
+    ]);
+    return response.send(user);
   };
 }
 

@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import Controller from "interfaces/controller.interface";
 import errorMiddleware from "middleware/errorMiddleware";
 
@@ -17,6 +18,7 @@ class App {
 
   private initializeMiddlewares() {
     this.app.use(express.json());
+    this.app.use(cookieParser());
     this.app.use(cors());
   }
 

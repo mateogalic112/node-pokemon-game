@@ -1,6 +1,11 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, User } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { RegisterUserDto } from "users/user.interface";
+import {
+  DataStoredInToken,
+  RegisterUserDto,
+  TokenData,
+} from "users/user.interface";
+import jwt from "jsonwebtoken";
 
 class AuthService {
   public prisma = new PrismaClient();
@@ -8,6 +13,13 @@ class AuthService {
   public async findUserByEmail(email: string) {
     const foundUser = await this.prisma.user.findFirst({
       where: { email },
+    });
+    return foundUser;
+  }
+
+  public async findUserById(id: number) {
+    const foundUser = await this.prisma.user.findFirst({
+      where: { id },
     });
     return foundUser;
   }
@@ -44,6 +56,22 @@ class AuthService {
     });
     createdUser.password = undefined;
     return createdUser;
+  }
+
+  public createToken(user: User): TokenData {
+    const expiresIn = 60 * 60; // an hour
+    const secret = process.env.JWT_SECRET;
+    const dataStoredInToken: DataStoredInToken = {
+      _id: user.id,
+    };
+    return {
+      expiresIn,
+      token: jwt.sign(dataStoredInToken, secret, { expiresIn }),
+    };
+  }
+
+  public createCookie(tokenData: TokenData) {
+    return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}`;
   }
 }
 
