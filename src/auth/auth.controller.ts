@@ -23,7 +23,7 @@ class AuthController implements Controller {
     this.router.post(
       `${this.path}/register`,
       validate(registerUserSchema),
-      this.registration
+      this.register
     );
     this.router.post(
       `${this.path}/login`,
@@ -33,7 +33,7 @@ class AuthController implements Controller {
     this.router.post(`${this.path}/logout`, this.logout);
   }
 
-  private registration = async (
+  private register = async (
     request: express.Request,
     response: express.Response,
     next: express.NextFunction
