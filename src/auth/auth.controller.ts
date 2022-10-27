@@ -1,7 +1,8 @@
 import UserWithThatEmailAlreadyExistsException from "exceptions/user/UserWithThatEmailAlreadyExistsException";
+import WrongCredentialsException from "exceptions/user/WrongCredentialsException";
 import express from "express";
 import Controller from "interfaces/controller.interface";
-import { RegisterUserDto } from "users/user.interface";
+import { LoginUserDto, RegisterUserDto } from "users/user.interface";
 import { registerUserSchema } from "validation/user/registerUserSchema";
 import validate from "validation/validation";
 import AuthService from "./auth.service";
@@ -21,7 +22,7 @@ class AuthController implements Controller {
       validate(registerUserSchema),
       this.registration
     );
-    // this.router.post(`${this.path}/login`, this.login);
+    this.router.post(`${this.path}/login`, this.login);
   }
 
   private registration = async (
@@ -38,28 +39,28 @@ class AuthController implements Controller {
     return response.send(registeredUser);
   };
 
-  // private login = async (
-  //   request: express.Request,
-  //   response: express.Response,
-  //   next: express.NextFunction
-  // ) => {
-  //   const logInData: LogInDto = request.body;
-  //   const user = await this.user.findOne({ email: logInData.email });
-  //   if (user) {
-  //     const isPasswordMatching = await bcrypt.compare(
-  //       logInData.password,
-  //       user.password
-  //     );
-  //     if (isPasswordMatching) {
-  //       user.password = undefined;
-  //       response.send(user);
-  //     } else {
-  //       next(new WrongCredentialsException());
-  //     }
-  //   } else {
-  //     next(new WrongCredentialsException());
-  //   }
-  // };
+  private login = async (
+    request: express.Request,
+    response: express.Response,
+    next: express.NextFunction
+  ) => {
+    const loginData: LoginUserDto = request.body;
+    const user = await this.authService.findUserByEmail(loginData.email);
+    if (user) {
+      const isPasswordMatching = await this.authService.checkIfPasswordMatch(
+        loginData.password,
+        user.password
+      );
+      if (isPasswordMatching) {
+        user.password = undefined;
+        return response.send(user);
+      } else {
+        return next(new WrongCredentialsException());
+      }
+    } else {
+      return next(new WrongCredentialsException());
+    }
+  };
 }
 
 export default AuthController;

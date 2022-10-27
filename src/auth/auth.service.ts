@@ -22,6 +22,17 @@ class AuthService {
     return hashedPassword;
   }
 
+  public async checkIfPasswordMatch(
+    currentPassword: string,
+    userPassword: string
+  ) {
+    const isPasswordMatching = await bcrypt.compare(
+      currentPassword,
+      userPassword
+    );
+    return isPasswordMatching;
+  }
+
   public async registerUser(userData: RegisterUserDto) {
     const hashedPassword = await this.hashPassword(userData.password);
     const createdUser = await this.prisma.user.create({
