@@ -4,19 +4,19 @@ import { Request, Response, NextFunction } from "express";
 import RequestWithUser from "interfaces/requestWithUser";
 import { DataStoredInToken } from "users/user.interface";
 import jwt from "jsonwebtoken";
-import AuthService from "auth/auth.service";
+import UserService from "users/user.service";
 
 async function authMiddleware(
   request: Request,
   response: Response,
   next: NextFunction
 ) {
-  const authService = new AuthService();
+  const userService = new UserService();
 
   const requestWithUser = request as Request & RequestWithUser;
   const cookies = requestWithUser.cookies;
   if (!(cookies && cookies.Authorization)) {
-    next(new AuthenticationTokenMissingException());
+    return next(new AuthenticationTokenMissingException());
   }
 
   try {
@@ -27,14 +27,14 @@ async function authMiddleware(
     ) as DataStoredInToken;
 
     const id = verificationResponse._id;
-    const user = await authService.findUserById(id);
+    const user = await userService.findUserById(id);
     if (!user) {
-      next(new WrongAuthenticationTokenException());
+      return next(new WrongAuthenticationTokenException());
     }
     requestWithUser.user = user;
     next();
   } catch (error) {
-    next(new WrongAuthenticationTokenException());
+    return next(new WrongAuthenticationTokenException());
   }
 }
 

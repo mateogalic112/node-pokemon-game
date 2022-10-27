@@ -3,6 +3,8 @@ import WrongCredentialsException from "exceptions/user/WrongCredentialsException
 import express from "express";
 import Controller from "interfaces/controller.interface";
 import { LoginUserDto, RegisterUserDto } from "users/user.interface";
+import UserService from "users/user.service";
+import { loginUserSchema } from "validation/user/loginUserSchema";
 import { registerUserSchema } from "validation/user/registerUserSchema";
 import validate from "validation/validation";
 import AuthService from "./auth.service";
@@ -11,6 +13,7 @@ class AuthController implements Controller {
   public path = "/auth";
   public router = express.Router();
   public authService = new AuthService();
+  public userService = new UserService();
 
   constructor() {
     this.initializeRoutes();
@@ -22,7 +25,12 @@ class AuthController implements Controller {
       validate(registerUserSchema),
       this.registration
     );
-    this.router.post(`${this.path}/login`, this.login);
+    this.router.post(
+      `${this.path}/login`,
+      validate(loginUserSchema),
+      this.login
+    );
+    this.router.post(`${this.path}/logout`, this.logout);
   }
 
   private registration = async (
@@ -37,10 +45,11 @@ class AuthController implements Controller {
 
     const registeredUser = await this.authService.registerUser(userData);
     const tokenData = this.authService.createToken(registeredUser);
+
     response.setHeader("Set-Cookie", [
       this.authService.createCookie(tokenData),
     ]);
-    return response.send(registeredUser);
+    return response.json(registeredUser);
   };
 
   private login = async (
@@ -49,7 +58,7 @@ class AuthController implements Controller {
     next: express.NextFunction
   ) => {
     const loginData: LoginUserDto = request.body;
-    const user = await this.authService.findUserByEmail(loginData.email);
+    const user = await this.userService.findUserByEmail(loginData.email);
     if (!user) {
       return next(new WrongCredentialsException());
     }
@@ -64,10 +73,16 @@ class AuthController implements Controller {
 
     user.password = undefined;
     const tokenData = this.authService.createToken(user);
+
     response.setHeader("Set-Cookie", [
       this.authService.createCookie(tokenData),
     ]);
-    return response.send(user);
+    return response.json(user);
+  };
+
+  private logout = (request: express.Request, response: express.Response) => {
+    response.setHeader("Set-Cookie", ["Authorization=;Max-age=0"]);
+    return response.json(200);
   };
 }
 

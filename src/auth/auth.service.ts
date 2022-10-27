@@ -6,26 +6,14 @@ import {
   TokenData,
 } from "users/user.interface";
 import jwt from "jsonwebtoken";
+import UserService from "users/user.service";
 
 class AuthService {
   public prisma = new PrismaClient();
-
-  public async findUserByEmail(email: string) {
-    const foundUser = await this.prisma.user.findFirst({
-      where: { email },
-    });
-    return foundUser;
-  }
-
-  public async findUserById(id: number) {
-    const foundUser = await this.prisma.user.findFirst({
-      where: { id },
-    });
-    return foundUser;
-  }
+  public userService = new UserService();
 
   public async checkIfEmailAlreadyExists(email: string) {
-    if (await this.findUserByEmail(email)) return true;
+    if (await this.userService.findUserByEmail(email)) return true;
     return false;
   }
 
