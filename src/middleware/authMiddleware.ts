@@ -1,6 +1,6 @@
 import AuthenticationTokenMissingException from "exceptions/user/AuthenticationTokenMissingException";
 import WrongAuthenticationTokenException from "exceptions/user/WrongAuthenticationTokenException";
-import { NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import RequestWithUser from "interfaces/requestWithUser";
 import { DataStoredInToken } from "users/user.interface";
 import jwt from "jsonwebtoken";
