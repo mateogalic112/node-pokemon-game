@@ -1,4 +1,6 @@
 import express from "express";
+import { createPokeTrainerSchema } from "validation/pokeTrainer/createPokeTrainerSchema";
+import validate from "validation/validation";
 import { CreatePokeTrainerDto } from "./pokeTrainer.interface";
 import PokeTrainerService from "./pokeTrainer.service";
 
@@ -13,7 +15,11 @@ class PokeTrainerController {
 
   public initializeRoutes() {
     this.router.get(`${this.path}/:id`, this.getPokeTrainer);
-    this.router.post(this.path, this.createPokeTrainer);
+    this.router.post(
+      this.path,
+      validate(createPokeTrainerSchema),
+      this.createPokeTrainer
+    );
     this.router.patch(`${this.path}/:id`, this.updatePokeballs);
   }
 
