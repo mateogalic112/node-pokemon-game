@@ -3,12 +3,20 @@
       "sourceMap": true,
       "target": "es2017",
       "outDir": "./dist",
-      "baseUrl": "src",
+      "baseUrl": "./src",
+      "paths": {
+        "*": [
+          "./*"
+        ],
+      },
       "module": "commonjs",
       "resolveJsonModule": true,
       "esModuleInterop": true,
       "experimentalDecorators": true
     },
-    "include": ["src/**/*.ts"],
+    "include": ["src"],
     "exclude": ["node_modules", "src/tests/**/*"],
+    "ts-node": {
+      "require": ["tsconfig-paths/register"]
+    }
 }
