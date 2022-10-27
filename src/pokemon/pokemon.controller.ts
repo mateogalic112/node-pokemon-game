@@ -1,5 +1,5 @@
 import express from "express";
-import PokemonService from "./pokemon.service";
+import PokemonService from "pokemon/pokemon.service";
 
 class PokemonController {
   public path = "/pokemons";

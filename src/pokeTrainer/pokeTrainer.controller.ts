@@ -1,5 +1,5 @@
 import express from "express";
-import PokeTrainerService from "./pokeTrainer.service";
+import PokeTrainerService from "pokeTrainer/pokeTrainer.service";
 
 class PokeTrainerController {
   public path = "/poke-trainers";
