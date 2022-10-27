@@ -11,19 +11,10 @@ class PokeTrainerController {
   }
 
   public initializeRoutes() {
-    this.router.get(this.path, this.getAllPokeTrainers);
     this.router.get(`${this.path}/:id`, this.getPokeTrainer);
     this.router.post(this.path, this.createPokeTrainer);
     this.router.patch(`${this.path}/:id`, this.updatePokeballs);
   }
-
-  private getAllPokeTrainers = async (
-    request: express.Request,
-    response: express.Response
-  ) => {
-    const pokeTrainers = await this.prisma.pokeTrainer.findMany();
-    return response.json(pokeTrainers);
-  };
 
   private getPokeTrainer = async (
     request: express.Request,

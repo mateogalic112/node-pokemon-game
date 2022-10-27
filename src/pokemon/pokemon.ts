@@ -11,18 +11,9 @@ class PokemonController {
   }
 
   public initializeRoutes() {
-    this.router.get(this.path, this.getAllPokemons);
     this.router.post(this.path, this.createPokemon);
     this.router.patch(`${this.path}/:id`, this.updatePokemonHp);
   }
-
-  private getAllPokemons = async (
-    request: express.Request,
-    response: express.Response
-  ) => {
-    const pokemon = await this.prisma.pokemon.findMany();
-    return response.json(pokemon);
-  };
 
   private createPokemon = async (
     request: express.Request,
