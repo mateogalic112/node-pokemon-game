@@ -1,21 +1,10 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
 
-class PokemonController {
-  public path = "/pokemons";
-  public router = express.Router();
+class PokemonService {
   public prisma = new PrismaClient();
 
-  constructor() {
-    this.initializeRoutes();
-  }
-
-  public initializeRoutes() {
-    this.router.post(this.path, this.createPokemon);
-    this.router.patch(`${this.path}/:id`, this.updatePokemonHp);
-  }
-
-  private createPokemon = async (
+  public createPokemon = async (
     request: express.Request,
     response: express.Response
   ) => {
@@ -26,7 +15,7 @@ class PokemonController {
     return response.json(pokemon);
   };
 
-  private updatePokemonHp = async (
+  public updatePokemonHp = async (
     request: express.Request,
     response: express.Response
   ) => {
@@ -41,4 +30,4 @@ class PokemonController {
   };
 }
 
-export default PokemonController;
+export default PokemonService;

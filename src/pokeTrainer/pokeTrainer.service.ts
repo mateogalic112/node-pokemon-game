@@ -1,22 +1,10 @@
-import express from "express";
 import { PrismaClient } from "@prisma/client";
+import express from "express";
 
-class PokeTrainerController {
-  public path = "/poke-trainers";
-  public router = express.Router();
+class PokeTrainerService {
   public prisma = new PrismaClient();
 
-  constructor() {
-    this.initializeRoutes();
-  }
-
-  public initializeRoutes() {
-    this.router.get(`${this.path}/:id`, this.getPokeTrainer);
-    this.router.post(this.path, this.createPokeTrainer);
-    this.router.patch(`${this.path}/:id`, this.updatePokeballs);
-  }
-
-  private getPokeTrainer = async (
+  public getPokeTrainer = async (
     request: express.Request,
     response: express.Response
   ) => {
@@ -32,7 +20,7 @@ class PokeTrainerController {
     return response.json(pokeTrainer);
   };
 
-  private updatePokeballs = async (
+  public updatePokeballs = async (
     request: express.Request,
     response: express.Response
   ) => {
@@ -48,7 +36,7 @@ class PokeTrainerController {
     return response.json(updatedTrainer);
   };
 
-  private createPokeTrainer = async (
+  public createPokeTrainer = async (
     request: express.Request,
     response: express.Response
   ) => {
@@ -60,4 +48,4 @@ class PokeTrainerController {
   };
 }
 
-export default PokeTrainerController;
+export default PokeTrainerService;
