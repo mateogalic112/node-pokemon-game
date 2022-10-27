@@ -9,7 +9,7 @@ import jwt from "jsonwebtoken";
 import UserService from "users/user.service";
 
 class AuthService {
-  public prisma = new PrismaClient();
+  private prisma = new PrismaClient();
   public userService = new UserService();
 
   public async checkIfEmailAlreadyExists(email: string) {

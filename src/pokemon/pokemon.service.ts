@@ -4,7 +4,7 @@ import RequestWithUser from "interfaces/requestWithUser";
 import { CreatePokemonDto } from "./pokemon.interface";
 
 class PokemonService {
-  public prisma = new PrismaClient();
+  private prisma = new PrismaClient();
 
   public createPokemon = async (pokemonData: CreatePokemonDto) => {
     const pokemon = await this.prisma.pokemon.create({

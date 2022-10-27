@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { CreatePokeTrainerDto } from "./pokeTrainer.interface";
 
 class PokeTrainerService {
-  public prisma = new PrismaClient();
+  private prisma = new PrismaClient();
 
   public getPokeTrainer = async (id: number) => {
     const pokeTrainer = await this.prisma.pokeTrainer.findFirst({

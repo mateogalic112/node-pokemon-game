@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
 class UserService {
-  public prisma = new PrismaClient();
+  private prisma = new PrismaClient();
 
   public async findUserByEmail(email: string) {
     const foundUser = await this.prisma.user.findFirst({
