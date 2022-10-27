@@ -23,7 +23,7 @@ class PokemonSocket {
 
   public ioListen() {
     this.socketServer.listen(this.socketPort, () => {
-      console.log(`App listening on the port ${this.socketPort}`);
+      console.log(`Socket listening on the port ${this.socketPort}`);
     });
 
     let players = [];

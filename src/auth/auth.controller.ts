@@ -31,11 +31,11 @@ class AuthController implements Controller {
   ) => {
     const userData: RegisterUserDto = request.body;
     if (await this.authService.checkIfEmailAlreadyExists(userData.email)) {
-      next(new UserWithThatEmailAlreadyExistsException());
+      return next(new UserWithThatEmailAlreadyExistsException());
     }
 
     const registeredUser = await this.authService.registerUser(userData);
-    response.send(registeredUser);
+    return response.send(registeredUser);
   };
 
   // private login = async (
