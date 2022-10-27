@@ -1,50 +1,41 @@
 import { PrismaClient } from "@prisma/client";
-import express from "express";
+import { CreatePokeTrainerDto } from "./pokeTrainer.interface";
 
 class PokeTrainerService {
   public prisma = new PrismaClient();
 
-  public getPokeTrainer = async (
-    request: express.Request,
-    response: express.Response
-  ) => {
+  public getPokeTrainer = async (id: number) => {
     const pokeTrainer = await this.prisma.pokeTrainer.findFirst({
       where: {
-        id: +request.params.id,
+        id,
       },
       include: {
         pokemons: true,
       },
     });
 
-    return response.json(pokeTrainer);
+    return pokeTrainer;
   };
 
-  public updatePokeballs = async (
-    request: express.Request,
-    response: express.Response
-  ) => {
+  public updatePokeballs = async (id: number, pokeballs: number) => {
     const updatedTrainer = await this.prisma.pokeTrainer.update({
       where: {
-        id: +request.params.id,
+        id,
       },
       data: {
-        pokeballs: +request.body.pokeballs,
+        pokeballs,
       },
     });
 
-    return response.json(updatedTrainer);
+    return updatedTrainer;
   };
 
-  public createPokeTrainer = async (
-    request: express.Request,
-    response: express.Response
-  ) => {
+  public createPokeTrainer = async (pokeTrainerData: CreatePokeTrainerDto) => {
     const pokeTrainer = await this.prisma.pokeTrainer.create({
-      data: request.body,
+      data: pokeTrainerData,
     });
 
-    return response.json(pokeTrainer);
+    return pokeTrainer;
   };
 }
 

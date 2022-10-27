@@ -1,4 +1,5 @@
 import express from "express";
+import { CreatePokeTrainerDto } from "./pokeTrainer.interface";
 import PokeTrainerService from "./pokeTrainer.service";
 
 class PokeTrainerController {
@@ -11,13 +12,47 @@ class PokeTrainerController {
   }
 
   public initializeRoutes() {
-    this.router.get(`${this.path}/:id`, this.pokeTrainerService.getPokeTrainer);
-    this.router.post(this.path, this.pokeTrainerService.createPokeTrainer);
-    this.router.patch(
-      `${this.path}/:id`,
-      this.pokeTrainerService.updatePokeballs
-    );
+    this.router.get(`${this.path}/:id`, this.getPokeTrainer);
+    this.router.post(this.path, this.createPokeTrainer);
+    this.router.patch(`${this.path}/:id`, this.updatePokeballs);
   }
+
+  private getPokeTrainer = async (
+    request: express.Request,
+    response: express.Response
+  ) => {
+    const id = +request.params.id;
+    const pokeTrainer = await this.pokeTrainerService.getPokeTrainer(id);
+
+    return response.json(pokeTrainer);
+  };
+
+  private updatePokeballs = async (
+    request: express.Request,
+    response: express.Response
+  ) => {
+    const id = +request.params.id;
+    const pokeballs = +request.body.pokeballs;
+
+    const updatedTrainer = await this.pokeTrainerService.updatePokeballs(
+      id,
+      pokeballs
+    );
+
+    return response.json(updatedTrainer);
+  };
+
+  private createPokeTrainer = async (
+    request: express.Request,
+    response: express.Response
+  ) => {
+    const pokeTrainerData: CreatePokeTrainerDto = request.body;
+    const newPokeTrainer = await this.pokeTrainerService.createPokeTrainer(
+      pokeTrainerData
+    );
+
+    return response.json(newPokeTrainer);
+  };
 }
 
 export default PokeTrainerController;
