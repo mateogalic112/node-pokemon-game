@@ -7,13 +7,14 @@ import jwt from "jsonwebtoken";
 import AuthService from "auth/auth.service";
 
 async function authMiddleware(
-  request: RequestWithUser,
+  request: Request,
   response: Response,
   next: NextFunction
 ) {
   const authService = new AuthService();
 
-  const cookies = request.cookies;
+  const requestWithUser = request as Request & RequestWithUser;
+  const cookies = requestWithUser.cookies;
   if (!(cookies && cookies.Authorization)) {
     next(new AuthenticationTokenMissingException());
   }
@@ -30,7 +31,7 @@ async function authMiddleware(
     if (!user) {
       next(new WrongAuthenticationTokenException());
     }
-    request.user = user;
+    requestWithUser.user = user;
     next();
   } catch (error) {
     next(new WrongAuthenticationTokenException());
