@@ -82,7 +82,7 @@ class AuthController implements Controller {
   };
 
   private authCookieOptions: CookieOptions = {
-    maxAge: 1000 * 60 * 15, // 15 minutes
+    maxAge: 1000 * 60 * 60, // 60 minutes
     httpOnly: true,
     sameSite: "none",
     secure: true,
