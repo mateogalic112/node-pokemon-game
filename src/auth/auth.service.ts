@@ -4,9 +4,9 @@ import {
   AuthData,
   DataStoredInToken,
   RegisterUserDto,
-} from "users/user.interface";
+} from "user/user.interface";
 import jwt from "jsonwebtoken";
-import UserService from "users/user.service";
+import UserService from "user/user.service";
 import PokeTrainerService from "pokeTrainer/pokeTrainer.service";
 
 class AuthService {

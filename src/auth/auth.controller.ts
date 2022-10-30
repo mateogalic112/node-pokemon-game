@@ -2,8 +2,8 @@ import UserWithThatEmailAlreadyExistsException from "exceptions/user/UserWithTha
 import WrongCredentialsException from "exceptions/user/WrongCredentialsException";
 import express, { CookieOptions } from "express";
 import Controller from "interfaces/controller.interface";
-import { LoginUserDto, RegisterUserDto } from "users/user.interface";
-import UserService from "users/user.service";
+import { LoginUserDto, RegisterUserDto } from "user/user.interface";
+import UserService from "user/user.service";
 import { loginUserSchema } from "validation/user/loginUserSchema";
 import { registerUserSchema } from "validation/user/registerUserSchema";
 import validate from "validation/validation";

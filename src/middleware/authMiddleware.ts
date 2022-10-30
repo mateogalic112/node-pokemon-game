@@ -2,9 +2,9 @@ import AuthenticationTokenMissingException from "exceptions/user/AuthenticationT
 import WrongAuthenticationTokenException from "exceptions/user/WrongAuthenticationTokenException";
 import { Request, Response, NextFunction } from "express";
 import RequestWithUser from "interfaces/requestWithUser";
-import { DataStoredInToken } from "users/user.interface";
+import { DataStoredInToken } from "user/user.interface";
 import jwt from "jsonwebtoken";
-import UserService from "users/user.service";
+import UserService from "user/user.service";
 
 async function authMiddleware(
   request: Request,
