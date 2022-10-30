@@ -17,6 +17,19 @@ class PokeTrainerService {
     return pokeTrainer;
   };
 
+  public getPokeTrainerByUserId = async (userId: number) => {
+    const pokeTrainer = await this.prisma.pokeTrainer.findFirst({
+      where: {
+        userId,
+      },
+      include: {
+        pokemons: true,
+      },
+    });
+
+    return pokeTrainer;
+  };
+
   public updatePokeballs = async (id: number, pokeballs: number) => {
     const updatedTrainer = await this.prisma.pokeTrainer.update({
       where: {

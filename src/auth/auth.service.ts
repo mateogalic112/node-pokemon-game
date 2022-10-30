@@ -14,6 +14,28 @@ class AuthService {
   public userService = new UserService();
   public pokeTrainerService = new PokeTrainerService();
 
+  public async registerUser(registerData: RegisterUserDto) {
+    const hashedPassword = await this.hashPassword(registerData.password);
+    const createdUser = await this.prisma.user.create({
+      data: {
+        email: registerData.email,
+        password: hashedPassword,
+      },
+    });
+    const pokeTrainer = await this.pokeTrainerService.createPokeTrainer({
+      userId: createdUser.id,
+      name: registerData.username,
+    });
+    return { ...pokeTrainer, ...createdUser, password: undefined };
+  }
+
+  public async loginUser(user: User) {
+    const pokeTrainer = await this.pokeTrainerService.getPokeTrainerByUserId(
+      user.id
+    );
+    return { ...pokeTrainer, ...user, password: undefined };
+  }
+
   public async checkIfEmailAlreadyExists(email: string) {
     if (await this.userService.findUserByEmail(email)) return true;
     return false;
@@ -33,22 +55,6 @@ class AuthService {
       userPassword
     );
     return isPasswordMatching;
-  }
-
-  public async registerUser(userData: RegisterUserDto) {
-    const hashedPassword = await this.hashPassword(userData.password);
-    const createdUser = await this.prisma.user.create({
-      data: {
-        email: userData.email,
-        password: hashedPassword,
-      },
-    });
-    await this.pokeTrainerService.createPokeTrainer({
-      userId: createdUser.id,
-      name: userData.username,
-    });
-    createdUser.password = undefined;
-    return createdUser;
   }
 
   public createToken(user: User): TokenData {

@@ -71,13 +71,13 @@ class AuthController implements Controller {
       return next(new WrongCredentialsException());
     }
 
-    user.password = undefined;
+    const loggedUser = await this.authService.loginUser(user);
     const tokenData = this.authService.createToken(user);
 
     response.setHeader("Set-Cookie", [
       this.authService.createCookie(tokenData),
     ]);
-    return response.json(user);
+    return response.json(loggedUser);
   };
 
   private logout = (request: express.Request, response: express.Response) => {
