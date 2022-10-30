@@ -17,3 +17,9 @@ export interface TokenData {
 export interface DataStoredInToken {
   _id: number;
 }
+
+export interface AuthData {
+  userId: number;
+  trainerId: number;
+  username: string;
+}

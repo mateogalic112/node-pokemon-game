@@ -1,6 +1,7 @@
 import { PrismaClient, User } from "@prisma/client";
 import bcrypt from "bcrypt";
 import {
+  AuthData,
   DataStoredInToken,
   RegisterUserDto,
   TokenData,
@@ -14,7 +15,7 @@ class AuthService {
   public userService = new UserService();
   public pokeTrainerService = new PokeTrainerService();
 
-  public async registerUser(registerData: RegisterUserDto) {
+  public async registerUser(registerData: RegisterUserDto): Promise<AuthData> {
     const hashedPassword = await this.hashPassword(registerData.password);
     const createdUser = await this.prisma.user.create({
       data: {
@@ -26,14 +27,22 @@ class AuthService {
       userId: createdUser.id,
       name: registerData.username,
     });
-    return { ...pokeTrainer, ...createdUser, password: undefined };
+    return {
+      userId: createdUser.id,
+      trainerId: pokeTrainer.id,
+      username: pokeTrainer.name,
+    };
   }
 
   public async loginUser(user: User) {
     const pokeTrainer = await this.pokeTrainerService.getPokeTrainerByUserId(
       user.id
     );
-    return { ...pokeTrainer, ...user, password: undefined };
+    return {
+      userId: user.id,
+      trainerId: pokeTrainer.id,
+      username: pokeTrainer.name,
+    };
   }
 
   public async checkIfEmailAlreadyExists(email: string) {
