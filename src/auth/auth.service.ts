@@ -7,10 +7,12 @@ import {
 } from "users/user.interface";
 import jwt from "jsonwebtoken";
 import UserService from "users/user.service";
+import PokeTrainerService from "pokeTrainer/pokeTrainer.service";
 
 class AuthService {
   private prisma = new PrismaClient();
   public userService = new UserService();
+  public pokeTrainerService = new PokeTrainerService();
 
   public async checkIfEmailAlreadyExists(email: string) {
     if (await this.userService.findUserByEmail(email)) return true;
@@ -37,10 +39,13 @@ class AuthService {
     const hashedPassword = await this.hashPassword(userData.password);
     const createdUser = await this.prisma.user.create({
       data: {
-        username: userData.username,
         email: userData.email,
         password: hashedPassword,
       },
+    });
+    await this.pokeTrainerService.createPokeTrainer({
+      userId: createdUser.id,
+      name: userData.username,
     });
     createdUser.password = undefined;
     return createdUser;
