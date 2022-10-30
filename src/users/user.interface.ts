@@ -9,11 +9,6 @@ export interface LoginUserDto {
   password: string;
 }
 
-export interface TokenData {
-  token: string;
-  expiresIn: number;
-}
-
 export interface DataStoredInToken {
   _id: number;
 }

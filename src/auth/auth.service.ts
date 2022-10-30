@@ -4,7 +4,6 @@ import {
   AuthData,
   DataStoredInToken,
   RegisterUserDto,
-  TokenData,
 } from "users/user.interface";
 import jwt from "jsonwebtoken";
 import UserService from "users/user.service";
@@ -66,20 +65,15 @@ class AuthService {
     return isPasswordMatching;
   }
 
-  public createToken(userId: number): TokenData {
+  public createToken(userId: number): string {
     const expiresIn = 60 * 60; // an hour
     const secret = process.env.JWT_SECRET;
     const dataStoredInToken: DataStoredInToken = {
       _id: userId,
     };
-    return {
-      expiresIn,
-      token: jwt.sign(dataStoredInToken, secret, { expiresIn }),
-    };
-  }
 
-  public createCookie(tokenData: TokenData) {
-    return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}`;
+    const token = jwt.sign(dataStoredInToken, secret, { expiresIn });
+    return token;
   }
 }
 

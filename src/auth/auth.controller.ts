@@ -1,6 +1,6 @@
 import UserWithThatEmailAlreadyExistsException from "exceptions/user/UserWithThatEmailAlreadyExistsException";
 import WrongCredentialsException from "exceptions/user/WrongCredentialsException";
-import express from "express";
+import express, { CookieOptions } from "express";
 import Controller from "interfaces/controller.interface";
 import { LoginUserDto, RegisterUserDto } from "users/user.interface";
 import UserService from "users/user.service";
@@ -46,9 +46,7 @@ class AuthController implements Controller {
     const registeredUser = await this.authService.registerUser(userData);
     const tokenData = this.authService.createToken(registeredUser.userId);
 
-    response.setHeader("Set-Cookie", [
-      this.authService.createCookie(tokenData),
-    ]);
+    response.cookie("Authorization", tokenData, this.authCookieOptions);
     return response.json(registeredUser);
   };
 
@@ -74,15 +72,20 @@ class AuthController implements Controller {
     const loggedUser = await this.authService.loginUser(user);
     const tokenData = this.authService.createToken(user.id);
 
-    response.setHeader("Set-Cookie", [
-      this.authService.createCookie(tokenData),
-    ]);
+    response.cookie("Authorization", tokenData, this.authCookieOptions);
     return response.json(loggedUser);
   };
 
   private logout = (request: express.Request, response: express.Response) => {
     response.setHeader("Set-Cookie", ["Authorization=;Max-age=0"]);
     return response.json(200);
+  };
+
+  private authCookieOptions: CookieOptions = {
+    maxAge: 1000 * 60 * 15, // 15 minutes
+    httpOnly: true,
+    sameSite: "none",
+    secure: true,
   };
 }
 
