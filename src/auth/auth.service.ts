@@ -66,11 +66,11 @@ class AuthService {
     return isPasswordMatching;
   }
 
-  public createToken(user: User): TokenData {
+  public createToken(userId: number): TokenData {
     const expiresIn = 60 * 60; // an hour
     const secret = process.env.JWT_SECRET;
     const dataStoredInToken: DataStoredInToken = {
-      _id: user.id,
+      _id: userId,
     };
     return {
       expiresIn,

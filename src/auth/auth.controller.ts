@@ -44,7 +44,7 @@ class AuthController implements Controller {
     }
 
     const registeredUser = await this.authService.registerUser(userData);
-    const tokenData = this.authService.createToken(registeredUser);
+    const tokenData = this.authService.createToken(registeredUser.userId);
 
     response.setHeader("Set-Cookie", [
       this.authService.createCookie(tokenData),
@@ -72,7 +72,7 @@ class AuthController implements Controller {
     }
 
     const loggedUser = await this.authService.loginUser(user);
-    const tokenData = this.authService.createToken(user);
+    const tokenData = this.authService.createToken(user.id);
 
     response.setHeader("Set-Cookie", [
       this.authService.createCookie(tokenData),
