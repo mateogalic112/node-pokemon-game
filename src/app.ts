@@ -19,7 +19,7 @@ class App {
   private initializeMiddlewares() {
     this.app.use(express.json());
     this.app.use(cookieParser());
-    this.app.use(cors());
+    this.app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
   }
 
   private initializeErrorHandling() {
