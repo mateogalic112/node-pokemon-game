@@ -16,7 +16,7 @@ async function authMiddleware(
   const requestWithUser = request as Request & RequestWithUser;
   const cookies = requestWithUser.cookies;
   if (!(cookies && cookies.Authorization)) {
-    return next(new AuthenticationTokenMissingException());
+    next(new AuthenticationTokenMissingException());
   }
 
   try {
@@ -29,12 +29,12 @@ async function authMiddleware(
     const id = verificationResponse._id;
     const user = await userService.findUserById(id);
     if (!user) {
-      return next(new WrongAuthenticationTokenException());
+      next(new WrongAuthenticationTokenException());
     }
     requestWithUser.user = user;
     next();
   } catch (error) {
-    return next(new WrongAuthenticationTokenException());
+    next(new WrongAuthenticationTokenException());
   }
 }
 

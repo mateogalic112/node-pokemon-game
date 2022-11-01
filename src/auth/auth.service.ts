@@ -33,12 +33,12 @@ class AuthService {
     };
   }
 
-  public async loginUser(user: User) {
+  public async loginUser(userId: number) {
     const pokeTrainer = await this.pokeTrainerService.getPokeTrainerByUserId(
-      user.id
+      userId
     );
     return {
-      userId: user.id,
+      userId,
       trainerId: pokeTrainer.id,
       username: pokeTrainer.name,
     };

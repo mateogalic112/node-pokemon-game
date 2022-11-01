@@ -2,6 +2,8 @@ import UserWithThatEmailAlreadyExistsException from "exceptions/user/UserWithTha
 import WrongCredentialsException from "exceptions/user/WrongCredentialsException";
 import express, { CookieOptions } from "express";
 import Controller from "interfaces/controller.interface";
+import RequestWithUser from "interfaces/requestWithUser";
+import authMiddleware from "middleware/authMiddleware";
 import { LoginUserDto, RegisterUserDto } from "user/user.interface";
 import UserService from "user/user.service";
 import { loginUserSchema } from "validation/user/loginUserSchema";
@@ -30,6 +32,7 @@ class AuthController implements Controller {
       validate(loginUserSchema),
       this.login
     );
+    this.router.get(`${this.path}/isLoggedIn`, authMiddleware, this.isLoggedIn);
     this.router.post(`${this.path}/logout`, this.logout);
   }
 
@@ -69,10 +72,21 @@ class AuthController implements Controller {
       return next(new WrongCredentialsException());
     }
 
-    const loggedUser = await this.authService.loginUser(user);
+    const loggedUser = await this.authService.loginUser(user.id);
     const tokenData = this.authService.createToken(user.id);
 
     response.cookie("Authorization", tokenData, this.authCookieOptions);
+    return response.json(loggedUser);
+  };
+
+  private isLoggedIn = async (
+    request: express.Request,
+    response: express.Response
+  ) => {
+    const requestWithUser = request as Request & RequestWithUser;
+    const loggedUser = await this.authService.loginUser(
+      requestWithUser.user.id
+    );
     return response.json(loggedUser);
   };
 
@@ -82,7 +96,7 @@ class AuthController implements Controller {
   };
 
   private authCookieOptions: CookieOptions = {
-    maxAge: 1000 * 60 * 60, // 60 minutes
+    maxAge: 5 * 60 * 60 * 1000, // 5 hours
     httpOnly: true,
     sameSite: "none",
     secure: true,
