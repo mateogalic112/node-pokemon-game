@@ -1,8 +1,9 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import Controller from "interfaces/controller.interface";
+import { Controller } from "interfaces/controller.interface";
 import errorMiddleware from "middleware/errorMiddleware";
+import { initializeDatabase } from "db/seed";
 
 class App {
   public app: express.Application;
@@ -11,6 +12,7 @@ class App {
   constructor(controllers: Controller[]) {
     this.app = express();
 
+    initializeDatabase();
     this.initializeMiddlewares();
     this.initializeControllers(controllers);
     this.initializeErrorHandling();
@@ -20,7 +22,7 @@ class App {
     this.app.use(
       cors({
         credentials: true,
-        origin: "http://localhost:3000",
+        origin: "http://localhost:3000"
       })
     );
     this.app.use(express.json());

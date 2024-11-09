@@ -1,5 +1,6 @@
-export interface CreatePokemonDto {
-  pokemonID: number;
+export interface Pokemon {
+  id: number;
+  pokemon_id: number;
   hp: number;
-  pokeTrainerId: number;
+  trainer_id: number;
 }

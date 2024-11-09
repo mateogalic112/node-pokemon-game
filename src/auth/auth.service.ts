@@ -1,79 +1,78 @@
-import { PrismaClient, User } from "@prisma/client";
 import bcrypt from "bcrypt";
-import {
-  AuthData,
-  DataStoredInToken,
-  RegisterUserDto,
-} from "user/user.interface";
+import { env } from "config/env";
+import { BadRequestError } from "exceptions/bad-request.error";
+import { NotFoundError } from "exceptions/not-found";
+import { UnauthorizedError } from "exceptions/unauthorized.error";
+import { CookieOptions } from "express";
 import jwt from "jsonwebtoken";
-import UserService from "user/user.service";
-import PokeTrainerService from "pokeTrainer/pokeTrainer.service";
+import { Pool } from "pg";
+import { Trainer } from "trainers/trainers.interface";
+import { CreateTrainerPayload, LoginTrainerPayload } from "trainers/trainers.validation";
 
 class AuthService {
-  private prisma = new PrismaClient();
-  public userService = new UserService();
-  public pokeTrainerService = new PokeTrainerService();
+  constructor(private pool: Pool) {}
 
-  public async registerUser(registerData: RegisterUserDto): Promise<AuthData> {
-    const hashedPassword = await this.hashPassword(registerData.password);
-    const createdUser = await this.prisma.user.create({
-      data: {
-        email: registerData.email,
-        password: hashedPassword,
-      },
-    });
-    const pokeTrainer = await this.pokeTrainerService.createPokeTrainer({
-      userId: createdUser.id,
-      name: registerData.username,
-    });
-    return {
-      userId: createdUser.id,
-      trainerId: pokeTrainer.id,
-      username: pokeTrainer.name,
-    };
-  }
+  public async register(payload: CreateTrainerPayload) {
+    const hashedPassword = await bcrypt.hash(payload.password, 10);
 
-  public async loginUser(userId: number) {
-    const pokeTrainer = await this.pokeTrainerService.getPokeTrainerByUserId(
-      userId
+    const registeredUser = await this.pool.query<Trainer>(
+      `
+      INSERT INTO trainers (email, password, name)
+      VALUES ($1, $2, $3)
+      RETURNING *;
+      `,
+      [payload.email, hashedPassword, payload.name]
     );
-    return {
-      userId,
-      trainerId: pokeTrainer.id,
-      username: pokeTrainer.name,
-    };
+
+    return registeredUser.rows[0];
   }
 
-  public async checkIfEmailAlreadyExists(email: string) {
-    if (await this.userService.findUserByEmail(email)) return true;
-    return false;
-  }
-
-  private async hashPassword(password: string) {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    return hashedPassword;
-  }
-
-  public async checkIfPasswordMatch(
-    currentPassword: string,
-    userPassword: string
-  ) {
-    const isPasswordMatching = await bcrypt.compare(
-      currentPassword,
-      userPassword
+  public async login(payload: LoginTrainerPayload) {
+    const user = await this.pool.query<Trainer>(
+      `
+      SELECT * FROM trainers WHERE email = $1;
+      `,
+      [payload.email]
     );
-    return isPasswordMatching;
+    if (!user) {
+      throw new BadRequestError("Invalid email or password");
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(payload.password, user.rows[0].password);
+    if (!isPasswordCorrect) {
+      throw new BadRequestError("Invalid email or password");
+    }
+
+    return user.rows[0];
   }
 
-  public createToken(userId: number): string {
-    const expiresIn = 60 * 60; // an hour
-    const secret = process.env.JWT_SECRET;
-    const dataStoredInToken: DataStoredInToken = {
-      _id: userId,
-    };
+  public async isLoggedIn(userId?: number) {
+    if (!userId) {
+      throw new UnauthorizedError("User not logged in");
+    }
 
-    const token = jwt.sign(dataStoredInToken, secret, { expiresIn });
-    return token;
+    const user = await this.pool.query<Trainer>(`
+      SELECT * FROM trainers WHERE id = $1;
+      `);
+
+    if (!user) {
+      throw new NotFoundError("User not found");
+    }
+
+    return user.rows[0];
+  }
+
+  public createCookieOptions(): CookieOptions {
+    return {
+      maxAge: 5 * 60 * 60 * 1000, // 5 hours
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production"
+    };
+  }
+
+  public createToken(userId: number) {
+    return jwt.sign({ _id: userId }, env.JWT_SECRET, { expiresIn: 60 * 60 });
   }
 }
 

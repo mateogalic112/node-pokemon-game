@@ -1,40 +1,25 @@
-import AuthenticationTokenMissingException from "exceptions/user/AuthenticationTokenMissingException";
-import WrongAuthenticationTokenException from "exceptions/user/WrongAuthenticationTokenException";
 import { Request, Response, NextFunction } from "express";
-import RequestWithUser from "interfaces/requestWithUser";
-import { DataStoredInToken } from "user/user.interface";
+import pool from "config/database";
 import jwt from "jsonwebtoken";
-import UserService from "user/user.service";
+import { UnauthorizedError } from "exceptions/unauthorized.error";
+import { env } from "config/env";
 
-async function authMiddleware(
-  request: Request,
-  response: Response,
-  next: NextFunction
-) {
-  const userService = new UserService();
+async function authMiddleware(request: Request, _: Response, next: NextFunction) {
+  const token = request.cookies.Authentication;
+  if (!token) return next(new UnauthorizedError());
 
-  const requestWithUser = request as Request & RequestWithUser;
-  const cookies = requestWithUser.cookies;
-  if (!(cookies && cookies.Authorization)) {
-    next(new AuthenticationTokenMissingException());
-  }
+  const decoded = jwt.verify(token, env.JWT_SECRET) as { _id: number };
+  if (!decoded._id) return next(new UnauthorizedError());
 
   try {
-    const secret = process.env.JWT_SECRET;
-    const verificationResponse = jwt.verify(
-      cookies.Authorization,
-      secret
-    ) as DataStoredInToken;
+    const result = await pool.query("SELECT id FROM trainers WHERE id = $1", [decoded._id]);
+    if (result.rows.length === 0) return next(new UnauthorizedError());
 
-    const id = verificationResponse._id;
-    const user = await userService.findUserById(id);
-    if (!user) {
-      next(new WrongAuthenticationTokenException());
-    }
-    requestWithUser.user = user;
+    request.userId = decoded._id;
+
     next();
   } catch (error) {
-    next(new WrongAuthenticationTokenException());
+    next(new UnauthorizedError());
   }
 }
 

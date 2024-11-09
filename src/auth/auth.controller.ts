@@ -1,105 +1,73 @@
-import UserWithThatEmailAlreadyExistsException from "exceptions/user/UserWithThatEmailAlreadyExistsException";
-import WrongCredentialsException from "exceptions/user/WrongCredentialsException";
-import express, { CookieOptions } from "express";
-import Controller from "interfaces/controller.interface";
-import RequestWithUser from "interfaces/requestWithUser";
+import { Request, Response, NextFunction, Router } from "express";
+import { Controller } from "interfaces/controller.interface";
 import authMiddleware from "middleware/authMiddleware";
-import { LoginUserDto, RegisterUserDto } from "user/user.interface";
-import UserService from "user/user.service";
-import { loginUserSchema } from "validation/user/loginUserSchema";
-import { registerUserSchema } from "validation/user/registerUserSchema";
-import validate from "validation/validation";
 import AuthService from "./auth.service";
+import validationMiddleware from "middleware/validation-middleware";
+import { createTrainerSchema, loginTrainerSchema } from "trainers/trainers.validation";
 
 class AuthController implements Controller {
   public path = "/auth";
-  public router = express.Router();
-  public authService = new AuthService();
-  public userService = new UserService();
+  public router = Router();
 
-  constructor() {
+  constructor(private authService: AuthService) {
     this.initializeRoutes();
   }
 
   private initializeRoutes() {
     this.router.post(
       `${this.path}/register`,
-      validate(registerUserSchema),
+      validationMiddleware(createTrainerSchema),
       this.register
     );
-    this.router.post(
-      `${this.path}/login`,
-      validate(loginUserSchema),
-      this.login
-    );
-    this.router.get(`${this.path}/isLoggedIn`, authMiddleware, this.isLoggedIn);
+    this.router.post(`${this.path}/login`, validationMiddleware(loginTrainerSchema), this.login);
+    this.router.get(`${this.path}/me`, authMiddleware, this.isLoggedIn);
     this.router.post(`${this.path}/logout`, this.logout);
   }
 
-  private register = async (
-    request: express.Request,
-    response: express.Response,
-    next: express.NextFunction
-  ) => {
-    const userData: RegisterUserDto = request.body;
-    if (await this.authService.checkIfEmailAlreadyExists(userData.email)) {
-      return next(new UserWithThatEmailAlreadyExistsException());
+  private register = async (request: Request, response: Response, next: NextFunction) => {
+    try {
+      const createdTrainer = await this.authService.register(request.body);
+      response.cookie(
+        "Authentication",
+        this.authService.createToken(createdTrainer.id),
+        this.authService.createCookieOptions()
+      );
+      response.status(201).json({ data: createdTrainer });
+    } catch (error) {
+      next(error);
     }
-
-    const registeredUser = await this.authService.registerUser(userData);
-    const tokenData = this.authService.createToken(registeredUser.userId);
-
-    response.cookie("Authorization", tokenData, this.authCookieOptions);
-    return response.json(registeredUser);
   };
 
-  private login = async (
-    request: express.Request,
-    response: express.Response,
-    next: express.NextFunction
-  ) => {
-    const loginData: LoginUserDto = request.body;
-    const user = await this.userService.findUserByEmail(loginData.email);
-    if (!user) {
-      return next(new WrongCredentialsException());
+  private login = async (request: Request, response: Response, next: NextFunction) => {
+    try {
+      const user = await this.authService.login(request.body);
+      response.cookie(
+        "Authentication",
+        this.authService.createToken(user.id),
+        this.authService.createCookieOptions()
+      );
+      response.json({ data: user });
+    } catch (error) {
+      console.log({ error });
+
+      next(error);
     }
+  };
 
-    const isPasswordMatching = await this.authService.checkIfPasswordMatch(
-      loginData.password,
-      user.password
-    );
-    if (!isPasswordMatching) {
-      return next(new WrongCredentialsException());
+  private isLoggedIn = async (request: Request, response: Response, next: NextFunction) => {
+    try {
+      const loggedUser = await this.authService.isLoggedIn(request.userId);
+      response.json(loggedUser);
+    } catch (error) {
+      next(error);
     }
-
-    const loggedUser = await this.authService.loginUser(user.id);
-    const tokenData = this.authService.createToken(user.id);
-
-    response.cookie("Authorization", tokenData, this.authCookieOptions);
-    return response.json(loggedUser);
   };
 
-  private isLoggedIn = async (
-    request: express.Request,
-    response: express.Response
-  ) => {
-    const requestWithUser = request as Request & RequestWithUser;
-    const loggedUser = await this.authService.loginUser(
-      requestWithUser.user.id
-    );
-    return response.json(loggedUser);
-  };
-
-  private logout = (request: express.Request, response: express.Response) => {
-    response.setHeader("Set-Cookie", ["Authorization=;Max-age=0"]);
-    return response.json(200);
-  };
-
-  private authCookieOptions: CookieOptions = {
-    maxAge: 5 * 60 * 60 * 1000, // 5 hours
-    httpOnly: true,
-    sameSite: "none",
-    secure: true,
+  private logout = (_: Request, response: Response) => {
+    response
+      .setHeader("Set-Cookie", ["Authentication=; Max-Age=0; Path=/; HttpOnly"])
+      .status(204)
+      .end();
   };
 }
 

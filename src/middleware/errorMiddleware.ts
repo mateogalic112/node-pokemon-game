@@ -1,8 +1,8 @@
-import HttpException from "exceptions/HttpException";
+import { HttpError } from "exceptions/http.error";
 import { NextFunction, Request, Response } from "express";
 
 function errorMiddleware(
-  error: HttpException,
+  error: HttpError,
   request: Request,
   response: Response,
   next: NextFunction
