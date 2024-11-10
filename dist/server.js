@@ -371,7 +371,7 @@ var TrainerController = class extends Controller {
     this.initializeRoutes();
   }
   initializeRoutes() {
-    this.router.get(`${this.path}/:id`, this.getTrainer);
+    this.router.get(`${this.path}/:id`, auth_middleware_default, this.getTrainer);
     this.router.patch(
       `${this.path}/:id`,
       auth_middleware_default,
@@ -440,26 +440,7 @@ var TrainerService = class {
     this.getTrainer = async (id) => {
       const pokeTrainer = await this.pool.query(
         `
-      SELECT 
-        t.id,
-        t.email,
-        t.name,
-        t.pokeballs,
-        COALESCE(
-          json_agg(
-            json_build_object(
-              'id', p.id,
-              'pokemon_id', p.pokemon_id,
-              'hp', p.hp,
-              'trainer_id', p.trainer_id
-            )
-          ) FILTER (WHERE p.id IS NOT NULL), 
-          '[]'
-        ) AS pokemons
-      FROM trainers t
-      LEFT JOIN pokemons p ON t.id = p.trainer_id
-      WHERE t.id = $1
-      GROUP BY t.id;
+      SELECT * FROM trainers WHERE id = $1;
       `,
         [id]
       );
@@ -528,9 +509,12 @@ var AuthService = class {
     if (!userId) {
       throw new UnauthorizedError("User not logged in");
     }
-    const user = await this.pool.query(`
+    const user = await this.pool.query(
+      `
       SELECT * FROM trainers WHERE id = $1;
-      `);
+      `,
+      [userId]
+    );
     if (!user) {
       throw new NotFoundError("User not found");
     }

@@ -7,26 +7,7 @@ export class TrainerService {
   public getTrainer = async (id: number) => {
     const pokeTrainer = await this.pool.query<Trainer>(
       `
-      SELECT 
-        t.id,
-        t.email,
-        t.name,
-        t.pokeballs,
-        COALESCE(
-          json_agg(
-            json_build_object(
-              'id', p.id,
-              'pokemon_id', p.pokemon_id,
-              'hp', p.hp,
-              'trainer_id', p.trainer_id
-            )
-          ) FILTER (WHERE p.id IS NOT NULL), 
-          '[]'
-        ) AS pokemons
-      FROM trainers t
-      LEFT JOIN pokemons p ON t.id = p.trainer_id
-      WHERE t.id = $1
-      GROUP BY t.id;
+      SELECT * FROM trainers WHERE id = $1;
       `,
       [id]
     );
@@ -35,7 +16,7 @@ export class TrainerService {
   };
 
   public updatePokeballs = async (id: number, pokeballs: number) => {
-    const updatedTrainer = await this.pool.query(
+    const updatedTrainer = await this.pool.query<Trainer>(
       `
       UPDATE trainers
       SET pokeballs = $1

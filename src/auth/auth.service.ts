@@ -51,9 +51,12 @@ export class AuthService {
       throw new UnauthorizedError("User not logged in");
     }
 
-    const user = await this.pool.query<Trainer>(`
+    const user = await this.pool.query<Trainer>(
+      `
       SELECT * FROM trainers WHERE id = $1;
-      `);
+      `,
+      [userId]
+    );
 
     if (!user) {
       throw new NotFoundError("User not found");

@@ -5,4 +5,3 @@ export const updatePokeballsSchema = z.object({
     pokeballs: z.number()
   })
 });
-export type UpdatePokeballsPayload = z.infer<typeof updatePokeballsSchema>["body"];
