@@ -2,7 +2,7 @@ import { Pokemon } from "./pokemon.interface";
 import { Pool } from "pg";
 import { CreatePokemonPayload } from "./pokemon.validation";
 
-class PokemonService {
+export class PokemonService {
   constructor(private pool: Pool) {}
 
   public createPokemon = async (payload: CreatePokemonPayload) => {
@@ -30,5 +30,3 @@ class PokemonService {
     return updatedPokemon.rows[0];
   };
 }
-
-export default PokemonService;

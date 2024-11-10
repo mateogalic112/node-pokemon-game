@@ -1,19 +1,16 @@
+import { env } from "config/env";
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 
-class PokemonSocket {
-  public socketServer: http.Server<
-    typeof http.IncomingMessage,
-    typeof http.ServerResponse
-  >;
+export class PokemonSocket {
+  public socketServer: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>;
   public io: Server;
-  public socketPort: number = 4000;
 
   private ioServerConfig = {
     cors: {
-      origin: "http://localhost:3000",
-    },
+      origin: "http://localhost:3000"
+    }
   };
 
   constructor(app: express.Application) {
@@ -22,8 +19,8 @@ class PokemonSocket {
   }
 
   public ioListen() {
-    this.socketServer.listen(this.socketPort, () => {
-      console.log(`Socket listening on the port ${this.socketPort}`);
+    this.socketServer.listen(env.SOCKET_SERVER_PORT, () => {
+      console.log(`Socket listening on the port ${env.SOCKET_SERVER_PORT}`);
     });
 
     let players = [];
@@ -38,7 +35,7 @@ class PokemonSocket {
           id: socket.id,
           trainerName,
           position: initialPosition,
-          pokemonId,
+          pokemonId
         });
 
         socket.emit("game_players", { players });
@@ -66,5 +63,3 @@ class PokemonSocket {
     });
   }
 }
-
-export default PokemonSocket;

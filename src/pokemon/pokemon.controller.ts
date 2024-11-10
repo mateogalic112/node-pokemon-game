@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import authMiddleware from "middleware/auth.middleware";
 import validationMiddleware from "middleware/validation.middleware";
 import { createPokemonSchema } from "./pokemon.validation";
-import PokemonService from "./pokemon.service";
+import { PokemonService } from "./pokemon.service";
 import { Controller } from "interfaces/controller.interface";
 
 export class PokemonController extends Controller {

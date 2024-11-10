@@ -2,12 +2,12 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { Controller } from "interfaces/controller.interface";
-import errorMiddleware from "middleware/errorMiddleware";
+import errorMiddleware from "middleware/error.middleware";
 import { initializeDatabase } from "db/seed";
+import { env } from "config/env";
 
-class App {
-  public app: express.Application;
-  public appPort: number = 5000;
+export class App {
+  private app: express.Application;
 
   constructor(controllers: Controller[]) {
     this.app = express();
@@ -15,22 +15,23 @@ class App {
     initializeDatabase();
     this.initializeMiddlewares();
     this.initializeControllers(controllers);
-    this.initializeErrorHandling();
+
+    this.app.use(errorMiddleware);
   }
 
   private initializeMiddlewares() {
+    this.app.use(express.json());
     this.app.use(
       cors({
-        credentials: true,
-        origin: "http://localhost:3000"
+        origin: "http://localhost:3000",
+        credentials: true
       })
     );
-    this.app.use(express.json());
     this.app.use(cookieParser());
   }
 
-  private initializeErrorHandling() {
-    this.app.use(errorMiddleware);
+  public getApp() {
+    return this.app;
   }
 
   private initializeControllers(controllers: Controller[]) {
@@ -39,15 +40,9 @@ class App {
     });
   }
 
-  public getApp() {
-    return this.app;
-  }
-
-  public appListen() {
-    this.app.listen(this.appPort, () => {
-      console.log(`App listening on the port ${this.appPort}`);
+  public listen() {
+    this.app.listen(env.APP_SERVER_PORT, () => {
+      console.log(`App listening on the port ${env.APP_SERVER_PORT}`);
     });
   }
 }
-
-export default App;
