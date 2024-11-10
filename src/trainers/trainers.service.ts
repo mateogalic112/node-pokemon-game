@@ -28,4 +28,15 @@ export class TrainerService {
 
     return updatedTrainer.rows[0];
   };
+
+  public getTrainerPokemons = async (trainerId: number) => {
+    const pokemons = await this.pool.query(
+      `
+      SELECT * FROM pokemons WHERE trainer_id = $1;
+      `,
+      [trainerId]
+    );
+
+    return pokemons.rows;
+  };
 }

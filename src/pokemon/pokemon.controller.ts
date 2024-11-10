@@ -12,7 +12,6 @@ export class PokemonController extends Controller {
   }
 
   protected initializeRoutes() {
-    this.router.get(`${this.path}/:trainerId`, authMiddleware, this.getPokemonsByTrainer);
     this.router.post(
       this.path,
       authMiddleware,
@@ -26,20 +25,6 @@ export class PokemonController extends Controller {
       this.updatePokemonHp
     );
   }
-
-  private getPokemonsByTrainer = async (
-    request: Request,
-    response: Response,
-    next: NextFunction
-  ) => {
-    try {
-      const trainerId = +request.params.trainerId;
-      const pokemons = await this.pokemonService.getPokemonsByTrainer(trainerId);
-      response.json({ data: pokemons });
-    } catch (error) {
-      next(error);
-    }
-  };
 
   private createPokemon = async (request: Request, response: Response, next: NextFunction) => {
     try {

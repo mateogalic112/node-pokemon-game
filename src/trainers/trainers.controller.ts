@@ -19,6 +19,7 @@ export class TrainerController extends Controller {
       validationMiddleware(updatePokeballsSchema),
       this.updatePokeballs
     );
+    this.router.get(`${this.path}/:trainerId/pokemons`, authMiddleware, this.getTrainerPokemons);
   }
 
   private getTrainer = async (request: Request, response: Response, next: NextFunction) => {
@@ -36,6 +37,16 @@ export class TrainerController extends Controller {
       const id = +request.params.id;
       const updatedTrainer = await this.trainerService.updatePokeballs(id, request.body.pokeballs);
       response.json({ data: updatedTrainer });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  private getTrainerPokemons = async (request: Request, response: Response, next: NextFunction) => {
+    try {
+      const trainerId = +request.params.trainerId;
+      const pokemons = await this.trainerService.getTrainerPokemons(trainerId);
+      response.json({ data: pokemons });
     } catch (error) {
       next(error);
     }
