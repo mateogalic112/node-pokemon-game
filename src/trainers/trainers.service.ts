@@ -1,11 +1,10 @@
 import { Pool } from "pg";
 import { Trainer } from "./trainers.interface";
-import { CreateTrainerPayload } from "./trainers.validation";
 
 export class TrainerService {
   constructor(private pool: Pool) {}
 
-  public getPokeTrainer = async (id: number) => {
+  public getTrainer = async (id: number) => {
     const pokeTrainer = await this.pool.query<Trainer>(
       `
       SELECT trainers.*, pokemons.*
@@ -31,17 +30,5 @@ export class TrainerService {
     );
 
     return updatedTrainer.rows[0];
-  };
-
-  public createPokeTrainer = async (payload: CreateTrainerPayload) => {
-    const pokeTrainer = await this.pool.query<Trainer>(
-      `
-      INSERT INTO trainers (email, password)
-      VALUES ($1, $2)
-      `,
-      [payload.email, payload.password]
-    );
-
-    return pokeTrainer.rows[0];
   };
 }

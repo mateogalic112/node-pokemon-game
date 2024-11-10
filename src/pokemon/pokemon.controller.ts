@@ -1,22 +1,21 @@
-import { Router, Request, Response, NextFunction } from "express";
-import authMiddleware from "middleware/authMiddleware";
-import validationMiddleware from "middleware/validation-middleware";
+import { Request, Response, NextFunction } from "express";
+import authMiddleware from "middleware/auth.middleware";
+import validationMiddleware from "middleware/validation.middleware";
 import { createPokemonSchema } from "./pokemon.validation";
 import PokemonService from "./pokemon.service";
+import { Controller } from "interfaces/controller.interface";
 
-class PokemonController {
-  public path = "/pokemons";
-  public router = Router();
-
+export class PokemonController extends Controller {
   constructor(private pokemonService: PokemonService) {
+    super("/pokemons");
     this.initializeRoutes();
   }
 
-  public initializeRoutes() {
+  protected initializeRoutes() {
     this.router.post(
       this.path,
-      validationMiddleware(createPokemonSchema),
       authMiddleware,
+      validationMiddleware(createPokemonSchema),
       this.createPokemon
     );
     this.router.patch(`${this.path}/:id`, authMiddleware, this.updatePokemonHp);
@@ -25,7 +24,7 @@ class PokemonController {
   private createPokemon = async (request: Request, response: Response, next: NextFunction) => {
     try {
       const pokemon = await this.pokemonService.createPokemon(request.body);
-      return response.json({ data: pokemon });
+      response.status(201).json({ data: pokemon });
     } catch (error) {
       next(error);
     }
@@ -35,11 +34,9 @@ class PokemonController {
     try {
       const id = +request.params.id;
       const updatedPokemon = await this.pokemonService.updatePokemonHp(id, request.body.hp);
-      return response.json({ data: updatedPokemon });
+      response.json({ data: updatedPokemon });
     } catch (error) {
       next(error);
     }
   };
 }
-
-export default PokemonController;

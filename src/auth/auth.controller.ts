@@ -1,38 +1,32 @@
-import { Request, Response, NextFunction, Router } from "express";
+import { Request, Response, NextFunction } from "express";
 import { Controller } from "interfaces/controller.interface";
-import authMiddleware from "middleware/authMiddleware";
-import AuthService from "./auth.service";
-import validationMiddleware from "middleware/validation-middleware";
-import { createTrainerSchema, loginTrainerSchema } from "trainers/trainers.validation";
+import authMiddleware from "middleware/auth.middleware";
+import { AuthService } from "./auth.service";
+import validationMiddleware from "middleware/validation.middleware";
+import { loginSchema, registerSchema } from "./auth.validation";
 
-class AuthController implements Controller {
-  public path = "/auth";
-  public router = Router();
-
+export class AuthController extends Controller {
   constructor(private authService: AuthService) {
+    super("/auth");
     this.initializeRoutes();
   }
 
-  private initializeRoutes() {
-    this.router.post(
-      `${this.path}/register`,
-      validationMiddleware(createTrainerSchema),
-      this.register
-    );
-    this.router.post(`${this.path}/login`, validationMiddleware(loginTrainerSchema), this.login);
+  protected initializeRoutes() {
+    this.router.post(`${this.path}/register`, validationMiddleware(registerSchema), this.register);
+    this.router.post(`${this.path}/login`, validationMiddleware(loginSchema), this.login);
     this.router.get(`${this.path}/me`, authMiddleware, this.isLoggedIn);
-    this.router.post(`${this.path}/logout`, this.logout);
+    this.router.post(`${this.path}/logout`, authMiddleware, this.logout);
   }
 
   private register = async (request: Request, response: Response, next: NextFunction) => {
     try {
-      const createdTrainer = await this.authService.register(request.body);
+      const createdUser = await this.authService.register(request.body);
       response.cookie(
         "Authentication",
-        this.authService.createToken(createdTrainer.id),
+        this.authService.createToken(createdUser.id),
         this.authService.createCookieOptions()
       );
-      response.status(201).json({ data: createdTrainer });
+      response.status(201).json({ data: createdUser });
     } catch (error) {
       next(error);
     }
@@ -48,8 +42,6 @@ class AuthController implements Controller {
       );
       response.json({ data: user });
     } catch (error) {
-      console.log({ error });
-
       next(error);
     }
   };
@@ -57,7 +49,7 @@ class AuthController implements Controller {
   private isLoggedIn = async (request: Request, response: Response, next: NextFunction) => {
     try {
       const loggedUser = await this.authService.isLoggedIn(request.userId);
-      response.json(loggedUser);
+      response.json({ data: loggedUser });
     } catch (error) {
       next(error);
     }
@@ -70,5 +62,3 @@ class AuthController implements Controller {
       .end();
   };
 }
-
-export default AuthController;

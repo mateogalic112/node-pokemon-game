@@ -1,18 +1,18 @@
 import bcrypt from "bcrypt";
 import { env } from "config/env";
-import { BadRequestError } from "exceptions/bad-request.error";
-import { NotFoundError } from "exceptions/not-found";
-import { UnauthorizedError } from "exceptions/unauthorized.error";
+import { BadRequestError } from "errors/bad-request.error";
+import { NotFoundError } from "errors/not-found";
+import { UnauthorizedError } from "errors/unauthorized.error";
 import { CookieOptions } from "express";
 import jwt from "jsonwebtoken";
 import { Pool } from "pg";
 import { Trainer } from "trainers/trainers.interface";
-import { CreateTrainerPayload, LoginTrainerPayload } from "trainers/trainers.validation";
+import { LoginPayload, RegisterPayload } from "./auth.validation";
 
-class AuthService {
+export class AuthService {
   constructor(private pool: Pool) {}
 
-  public async register(payload: CreateTrainerPayload) {
+  public async register(payload: RegisterPayload) {
     const hashedPassword = await bcrypt.hash(payload.password, 10);
 
     const registeredUser = await this.pool.query<Trainer>(
@@ -27,7 +27,7 @@ class AuthService {
     return registeredUser.rows[0];
   }
 
-  public async login(payload: LoginTrainerPayload) {
+  public async login(payload: LoginPayload) {
     const user = await this.pool.query<Trainer>(
       `
       SELECT * FROM trainers WHERE email = $1;
@@ -75,5 +75,3 @@ class AuthService {
     return jwt.sign({ _id: userId }, env.JWT_SECRET, { expiresIn: 60 * 60 });
   }
 }
-
-export default AuthService;

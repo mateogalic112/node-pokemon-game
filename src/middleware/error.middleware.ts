@@ -1,4 +1,4 @@
-import { HttpError } from "exceptions/http.error";
+import { HttpError } from "errors/http.error";
 import { NextFunction, Request, Response } from "express";
 
 function errorMiddleware(
@@ -11,7 +11,7 @@ function errorMiddleware(
   const message = error.message || "Something went wrong";
   response.status(status).send({
     status,
-    message,
+    message
   });
 }
 
