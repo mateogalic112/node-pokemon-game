@@ -43,7 +43,7 @@ var import_express = __toESM(require("express"));
 var import_cors = __toESM(require("cors"));
 var import_cookie_parser = __toESM(require("cookie-parser"));
 
-// src/middleware/errorMiddleware.ts
+// src/middleware/error.middleware.ts
 function errorMiddleware(error, request, response, next) {
   const status = error.status || 500;
   const message = error.message || "Something went wrong";
@@ -52,7 +52,7 @@ function errorMiddleware(error, request, response, next) {
     message
   });
 }
-var errorMiddleware_default = errorMiddleware;
+var error_middleware_default = errorMiddleware;
 
 // src/config/database.ts
 var import_pg = require("pg");
@@ -62,10 +62,12 @@ var import_dotenv = require("dotenv");
 var import_envalid = require("envalid");
 (0, import_dotenv.config)();
 var env = (0, import_envalid.cleanEnv)(process.env, {
+  APP_SERVER_PORT: (0, import_envalid.port)({ default: 5e3 }),
+  SOCKET_SERVER_PORT: (0, import_envalid.port)({ default: 4e3 }),
   POSTGRES_USER: (0, import_envalid.str)(),
   POSTGRES_PASSWORD: (0, import_envalid.str)(),
   POSTGRES_HOST: (0, import_envalid.str)(),
-  POSTGRES_PORT: (0, import_envalid.port)({ default: 5432 }),
+  POSTGRES_PORT: (0, import_envalid.port)(),
   POSTGRES_DB: (0, import_envalid.str)(),
   POKE_API_URL: (0, import_envalid.url)(),
   JWT_SECRET: (0, import_envalid.str)()
@@ -119,49 +121,50 @@ var initializeDatabase = async () => {
 // src/app.ts
 var App = class {
   constructor(controllers) {
-    this.appPort = 5e3;
     this.app = (0, import_express.default)();
     initializeDatabase();
     this.initializeMiddlewares();
     this.initializeControllers(controllers);
-    this.initializeErrorHandling();
+    this.app.use(error_middleware_default);
   }
   initializeMiddlewares() {
+    this.app.use(import_express.default.json());
     this.app.use(
       (0, import_cors.default)({
-        credentials: true,
-        origin: "http://localhost:3000"
+        origin: "http://localhost:3000",
+        credentials: true
       })
     );
-    this.app.use(import_express.default.json());
     this.app.use((0, import_cookie_parser.default)());
   }
-  initializeErrorHandling() {
-    this.app.use(errorMiddleware_default);
+  getApp() {
+    return this.app;
   }
   initializeControllers(controllers) {
     controllers.forEach((controller) => {
       this.app.use("/", controller.router);
     });
   }
-  getApp() {
-    return this.app;
-  }
-  appListen() {
-    this.app.listen(this.appPort, () => {
-      console.log(`App listening on the port ${this.appPort}`);
+  listen() {
+    this.app.listen(env.APP_SERVER_PORT, () => {
+      console.log(`App listening on the port ${env.APP_SERVER_PORT}`);
     });
   }
 };
-var app_default = App;
 
-// src/auth/auth.controller.ts
+// src/interfaces/controller.interface.ts
 var import_express2 = require("express");
+var Controller = class {
+  constructor(path) {
+    this.path = path;
+    this.router = (0, import_express2.Router)();
+  }
+};
 
-// src/middleware/authMiddleware.ts
+// src/middleware/auth.middleware.ts
 var import_jsonwebtoken = __toESM(require("jsonwebtoken"));
 
-// src/exceptions/http.error.ts
+// src/errors/http.error.ts
 var HttpError = class extends Error {
   constructor(status, message) {
     super(message);
@@ -170,14 +173,14 @@ var HttpError = class extends Error {
   }
 };
 
-// src/exceptions/unauthorized.error.ts
+// src/errors/unauthorized.error.ts
 var UnauthorizedError = class extends HttpError {
   constructor(message) {
     super(401, message || "Unauthorized");
   }
 };
 
-// src/middleware/authMiddleware.ts
+// src/middleware/auth.middleware.ts
 async function authMiddleware(request, _, next) {
   const token = request.cookies.Authentication;
   if (!token) return next(new UnauthorizedError());
@@ -192,16 +195,16 @@ async function authMiddleware(request, _, next) {
     next(new UnauthorizedError());
   }
 }
-var authMiddleware_default = authMiddleware;
+var auth_middleware_default = authMiddleware;
 
-// src/exceptions/bad-request.error.ts
+// src/errors/bad-request.error.ts
 var BadRequestError = class extends HttpError {
   constructor(message) {
     super(400, message || "Bad Request");
   }
 };
 
-// src/middleware/validation-middleware.ts
+// src/middleware/validation.middleware.ts
 var import_zod = require("zod");
 var validationMiddleware = (schema) => async (req, _, next) => {
   try {
@@ -220,42 +223,36 @@ var validationMiddleware = (schema) => async (req, _, next) => {
 };
 var validation_middleware_default = validationMiddleware;
 
-// src/trainers/trainers.validation.ts
+// src/auth/auth.validation.ts
 var import_zod2 = require("zod");
-var createTrainerSchema = import_zod2.z.object({
+var registerSchema = import_zod2.z.object({
   body: import_zod2.z.object({
     email: import_zod2.z.string().email(),
     password: import_zod2.z.string(),
     name: import_zod2.z.string().min(3)
   })
 });
-var loginTrainerSchema = import_zod2.z.object({
+var loginSchema = import_zod2.z.object({
   body: import_zod2.z.object({
     email: import_zod2.z.string().email(),
     password: import_zod2.z.string()
   })
 });
-var updatePokeballsSchema = import_zod2.z.object({
-  body: import_zod2.z.object({
-    pokeballs: import_zod2.z.number()
-  })
-});
 
 // src/auth/auth.controller.ts
-var AuthController = class {
+var AuthController = class extends Controller {
   constructor(authService) {
+    super("/auth");
     this.authService = authService;
-    this.path = "/auth";
-    this.router = (0, import_express2.Router)();
     this.register = async (request, response, next) => {
       try {
-        const createdTrainer = await this.authService.register(request.body);
+        const createdUser = await this.authService.register(request.body);
         response.cookie(
           "Authentication",
-          this.authService.createToken(createdTrainer.id),
+          this.authService.createToken(createdUser.id),
           this.authService.createCookieOptions()
         );
-        response.status(201).json({ data: createdTrainer });
+        response.status(201).json({ data: createdUser });
       } catch (error) {
         next(error);
       }
@@ -270,14 +267,13 @@ var AuthController = class {
         );
         response.json({ data: user });
       } catch (error) {
-        console.log({ error });
         next(error);
       }
     };
     this.isLoggedIn = async (request, response, next) => {
       try {
         const loggedUser = await this.authService.isLoggedIn(request.userId);
-        response.json(loggedUser);
+        response.json({ data: loggedUser });
       } catch (error) {
         next(error);
       }
@@ -288,20 +284,12 @@ var AuthController = class {
     this.initializeRoutes();
   }
   initializeRoutes() {
-    this.router.post(
-      `${this.path}/register`,
-      validation_middleware_default(createTrainerSchema),
-      this.register
-    );
-    this.router.post(`${this.path}/login`, validation_middleware_default(loginTrainerSchema), this.login);
-    this.router.get(`${this.path}/me`, authMiddleware_default, this.isLoggedIn);
-    this.router.post(`${this.path}/logout`, this.logout);
+    this.router.post(`${this.path}/register`, validation_middleware_default(registerSchema), this.register);
+    this.router.post(`${this.path}/login`, validation_middleware_default(loginSchema), this.login);
+    this.router.get(`${this.path}/me`, auth_middleware_default, this.isLoggedIn);
+    this.router.post(`${this.path}/logout`, auth_middleware_default, this.logout);
   }
 };
-var auth_controller_default = AuthController;
-
-// src/pokemon/pokemon.controller.ts
-var import_express3 = require("express");
 
 // src/pokemon/pokemon.validation.ts
 var import_zod3 = require("zod");
@@ -314,15 +302,14 @@ var createPokemonSchema = import_zod3.z.object({
 });
 
 // src/pokemon/pokemon.controller.ts
-var PokemonController = class {
+var PokemonController = class extends Controller {
   constructor(pokemonService) {
+    super("/pokemons");
     this.pokemonService = pokemonService;
-    this.path = "/pokemons";
-    this.router = (0, import_express3.Router)();
     this.createPokemon = async (request, response, next) => {
       try {
         const pokemon = await this.pokemonService.createPokemon(request.body);
-        return response.json({ data: pokemon });
+        response.status(201).json({ data: pokemon });
       } catch (error) {
         next(error);
       }
@@ -331,7 +318,7 @@ var PokemonController = class {
       try {
         const id = +request.params.id;
         const updatedPokemon = await this.pokemonService.updatePokemonHp(id, request.body.hp);
-        return response.json({ data: updatedPokemon });
+        response.json({ data: updatedPokemon });
       } catch (error) {
         next(error);
       }
@@ -341,41 +328,56 @@ var PokemonController = class {
   initializeRoutes() {
     this.router.post(
       this.path,
+      auth_middleware_default,
       validation_middleware_default(createPokemonSchema),
-      authMiddleware_default,
       this.createPokemon
     );
-    this.router.patch(`${this.path}/:id`, authMiddleware_default, this.updatePokemonHp);
+    this.router.patch(`${this.path}/:id`, auth_middleware_default, this.updatePokemonHp);
   }
 };
-var pokemon_controller_default = PokemonController;
+
+// src/trainers/trainers.validation.ts
+var import_zod4 = require("zod");
+var updatePokeballsSchema = import_zod4.z.object({
+  body: import_zod4.z.object({
+    pokeballs: import_zod4.z.number()
+  })
+});
 
 // src/trainers/trainers.controller.ts
-var import_express4 = __toESM(require("express"));
-var TrainerController = class {
+var TrainerController = class extends Controller {
   constructor(trainerService) {
+    super("/trainers");
     this.trainerService = trainerService;
-    this.path = "/trainers";
-    this.router = import_express4.default.Router();
-    this.getTrainer = async (request, response) => {
-      const id = +request.params.id;
-      const pokeTrainer = await this.trainerService.getPokeTrainer(id);
-      return response.json(pokeTrainer);
+    this.getTrainer = async (request, response, next) => {
+      try {
+        const id = +request.params.id;
+        const trainer = await this.trainerService.getTrainer(id);
+        response.json({ data: trainer });
+      } catch (error) {
+        next(error);
+      }
     };
-    this.updatePokeballs = async (request, response) => {
-      const id = +request.params.id;
-      const pokeballs = +request.body.pokeballs;
-      const updatedTrainer = await this.trainerService.updatePokeballs(
-        id,
-        pokeballs
-      );
-      return response.json(updatedTrainer);
+    this.updatePokeballs = async (request, response, next) => {
+      try {
+        const id = +request.params.id;
+        const pokeballs = +request.body.pokeballs;
+        const updatedTrainer = await this.trainerService.updatePokeballs(id, pokeballs);
+        response.json({ data: updatedTrainer });
+      } catch (error) {
+        next(error);
+      }
     };
     this.initializeRoutes();
   }
   initializeRoutes() {
     this.router.get(`${this.path}/:id`, this.getTrainer);
-    this.router.patch(`${this.path}/:id`, this.updatePokeballs);
+    this.router.patch(
+      `${this.path}/:id`,
+      auth_middleware_default,
+      validation_middleware_default(updatePokeballsSchema),
+      this.updatePokeballs
+    );
   }
 };
 
@@ -384,7 +386,6 @@ var import_http3 = __toESM(require("http"));
 var import_socket = require("socket.io");
 var PokemonSocket = class {
   constructor(app2) {
-    this.socketPort = 4e3;
     this.ioServerConfig = {
       cors: {
         origin: "http://localhost:3000"
@@ -394,27 +395,27 @@ var PokemonSocket = class {
     this.io = new import_socket.Server(this.socketServer, this.ioServerConfig);
   }
   ioListen() {
-    this.socketServer.listen(this.socketPort, () => {
-      console.log(`Socket listening on the port ${this.socketPort}`);
+    this.socketServer.listen(env.SOCKET_SERVER_PORT, () => {
+      console.log(`Socket listening on the port ${env.SOCKET_SERVER_PORT}`);
     });
     let players = [];
     let initialPosition = 5;
     this.io.on("connection", (socket) => {
       console.log(`User connected ${socket.id}`);
       socket.on("join_game", (data) => {
-        const { trainerName, pokemonId } = data;
+        const { name, pokemon_id } = data;
         players.push({
           id: socket.id,
-          trainerName,
+          name,
           position: initialPosition,
-          pokemonId
+          pokemon_id
         });
         socket.emit("game_players", { players });
         initialPosition++;
       });
       socket.on("update_player_position", (data) => {
         const newPlayers = players.map((player) => {
-          if (player.trainerName === data.trainerName) {
+          if (player.name === data.name) {
             return __spreadProps(__spreadValues({}, player), { position: data.newPosition });
           }
           return player;
@@ -431,19 +432,34 @@ var PokemonSocket = class {
     });
   }
 };
-var socket_default = PokemonSocket;
 
 // src/trainers/trainers.service.ts
 var TrainerService = class {
   constructor(pool2) {
     this.pool = pool2;
-    this.getPokeTrainer = async (id) => {
+    this.getTrainer = async (id) => {
       const pokeTrainer = await this.pool.query(
         `
-      SELECT trainers.*, pokemons.*
-      FROM trainers
-      LEFT JOIN pokemons ON trainers.id = pokemons.trainer_id
-      WHERE trainers.id = $1;
+      SELECT 
+        t.id,
+        t.email,
+        t.name,
+        t.pokeballs,
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', p.id,
+              'pokemon_id', p.pokemon_id,
+              'hp', p.hp,
+              'trainer_id', p.trainer_id
+            )
+          ) FILTER (WHERE p.id IS NOT NULL), 
+          '[]'
+        ) AS pokemons
+      FROM trainers t
+      LEFT JOIN pokemons p ON t.id = p.trainer_id
+      WHERE t.id = $1
+      GROUP BY t.id;
       `,
         [id]
       );
@@ -461,23 +477,13 @@ var TrainerService = class {
       );
       return updatedTrainer.rows[0];
     };
-    this.createPokeTrainer = async (payload) => {
-      const pokeTrainer = await this.pool.query(
-        `
-      INSERT INTO trainers (email, password)
-      VALUES ($1, $2)
-      `,
-        [payload.email, payload.password]
-      );
-      return pokeTrainer.rows[0];
-    };
   }
 };
 
 // src/auth/auth.service.ts
 var import_bcrypt2 = __toESM(require("bcrypt"));
 
-// src/exceptions/not-found.ts
+// src/errors/not-found.ts
 var NotFoundError = class extends HttpError {
   constructor(message) {
     super(404, message || "Not Found");
@@ -543,7 +549,6 @@ var AuthService = class {
     return import_jsonwebtoken2.default.sign({ _id: userId }, env.JWT_SECRET, { expiresIn: 60 * 60 });
   }
 };
-var auth_service_default = AuthService;
 
 // src/pokemon/pokemon.service.ts
 var PokemonService = class {
@@ -572,14 +577,13 @@ var PokemonService = class {
     };
   }
 };
-var pokemon_service_default = PokemonService;
 
 // src/server.ts
-var app = new app_default([
-  new auth_controller_default(new auth_service_default(database_default)),
+var app = new App([
+  new AuthController(new AuthService(database_default)),
   new TrainerController(new TrainerService(database_default)),
-  new pokemon_controller_default(new pokemon_service_default(database_default))
+  new PokemonController(new PokemonService(database_default))
 ]);
-var pokemonSocket = new socket_default(app.getApp());
-app.appListen();
+var pokemonSocket = new PokemonSocket(app.getApp());
+app.listen();
 pokemonSocket.ioListen();

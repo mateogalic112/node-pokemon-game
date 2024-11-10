@@ -30,12 +30,12 @@ export class PokemonSocket {
       console.log(`User connected ${socket.id}`);
 
       socket.on("join_game", (data) => {
-        const { trainerName, pokemonId } = data;
+        const { name, pokemon_id } = data;
         players.push({
           id: socket.id,
-          trainerName,
+          name,
           position: initialPosition,
-          pokemonId
+          pokemon_id
         });
 
         socket.emit("game_players", { players });
@@ -45,7 +45,7 @@ export class PokemonSocket {
 
       socket.on("update_player_position", (data) => {
         const newPlayers = players.map((player) => {
-          if (player.trainerName === data.trainerName) {
+          if (player.name === data.name) {
             return { ...player, position: data.newPosition };
           }
           return player;
