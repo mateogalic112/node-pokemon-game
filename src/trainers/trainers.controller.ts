@@ -34,8 +34,7 @@ export class TrainerController extends Controller {
   private updatePokeballs = async (request: Request, response: Response, next: NextFunction) => {
     try {
       const id = +request.params.id;
-      const pokeballs = +request.body.pokeballs;
-      const updatedTrainer = await this.trainerService.updatePokeballs(id, pokeballs);
+      const updatedTrainer = await this.trainerService.updatePokeballs(id, request.body.pokeballs);
       response.json({ data: updatedTrainer });
     } catch (error) {
       next(error);

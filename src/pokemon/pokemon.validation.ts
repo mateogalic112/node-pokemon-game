@@ -8,3 +8,9 @@ export const createPokemonSchema = z.object({
   })
 });
 export type CreatePokemonPayload = z.infer<typeof createPokemonSchema>["body"];
+
+export const updatePokemonHPSchema = z.object({
+  body: z.object({
+    hp: z.number()
+  })
+});

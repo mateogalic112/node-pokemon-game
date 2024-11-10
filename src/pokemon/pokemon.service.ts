@@ -5,10 +5,23 @@ import { CreatePokemonPayload } from "./pokemon.validation";
 export class PokemonService {
   constructor(private pool: Pool) {}
 
+  public getPokemonsByTrainer = async (trainerId: number) => {
+    const pokemons = await this.pool.query<Pokemon>(
+      `
+      SELECT * FROM pokemons WHERE trainer_id = $1;
+      `,
+      [trainerId]
+    );
+
+    return pokemons.rows;
+  };
+
   public createPokemon = async (payload: CreatePokemonPayload) => {
     const pokemon = await this.pool.query<Pokemon>(
       `
       INSERT INTO pokemons (pokemon_id, hp, trainer_id)
+      VALUES ($1, $2, $3)
+      RETURNING *;
       `,
       [payload.pokemon_id, payload.hp, payload.trainer_id]
     );
